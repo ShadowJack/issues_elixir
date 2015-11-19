@@ -31,14 +31,46 @@ defmodule Issues.CLI do
     end
   end
 
-  def process(:help) do
+  @doc """
+  Print help message
+  """
+  defp process(:help) do
     IO.puts """
     usage: issues user project [count | #{@default_count}]
     """
     System.halt(0)
   end
 
-  def process({ user, project, count }) do
+  @doc """
+  Process data from input and return issues
+  """
+  defp process({ user, project, count }) do
     Issues.GithubIssues.fetch(user, project)
+    |> decode_response
+    |> convert_to_list_of_hashdicts
+  end
+
+  @doc """
+  Decode JSON data recieved from Github
+  """
+  defp decode_response({:ok, data}), do: data
+
+  defp decode_response({:error, data}) when is_atom(data) do
+    IO.puts "Error fetching from GitHub: #{data}"
+    System.halt(2)
+  end
+
+  defp decode_response({:error, data}) do
+    {_, message} = List.keyfind(data, "message", 0)
+    IO.puts "Error fetching from GitHub: #{message}"
+    System.halt(2)
+  end
+
+  @doc """
+  Convert data from Github to convinient list of HashDicts
+  """
+  defp convert_to_list_of_hashdicts(list) do
+    list
+    |> Enum.map(&Enum.into(&1, HashDict.new))
   end
 end
