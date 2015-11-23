@@ -9,8 +9,8 @@ defmodule Issues.CLI do
 
   def run(argv) do
     argv
-    |> parse_args()
-    |> process()
+    |> parse_args
+    |> process
   end
 
   @doc """
@@ -48,6 +48,9 @@ defmodule Issues.CLI do
     Issues.GithubIssues.fetch(user, project)
     |> decode_response
     |> convert_to_list_of_hashdicts
+    |> sort_ascending
+    |> Enum.take(count)
+    |> Issues.TableFormatter.print_table_for_columns(["number", "created_at", "title"])
   end
 
   @doc """
@@ -69,8 +72,16 @@ defmodule Issues.CLI do
   @doc """
   Convert data from Github to convinient list of HashDicts
   """
-  defp convert_to_list_of_hashdicts(list) do
+  def convert_to_list_of_hashdicts(list) do
     list
     |> Enum.map(&Enum.into(&1, HashDict.new))
+  end
+
+  @doc """
+  Sort data recieved from GitHub in ascending order
+  """
+  def sort_ascending(list) do
+    list 
+    |> Enum.sort fn e1, e2 -> e1["created_at"] <= e2["created_at"] end
   end
 end
